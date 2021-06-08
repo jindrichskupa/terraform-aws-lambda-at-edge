@@ -8,7 +8,7 @@
  */
 data "archive_file" "zip_file_for_lambda" {
   type        = "zip"
-  output_path = "lambda_code.zip"
+  output_path = "${path.module}/lambda_code.zip"
 
   dynamic "source" {
     for_each = distinct(flatten([
