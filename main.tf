@@ -7,6 +7,7 @@
  * In the future, we may want to source our code from an s3 bucket instead of a local zip.
  */
 data "archive_file" "zip_file_for_lambda" {
+  count       = var.lambda_zip_archive == "" ? 1 : 0
   type        = "zip"
   output_path = "${path.module}/lambda_code.zip"
 
@@ -40,11 +41,24 @@ data "archive_file" "zip_file_for_lambda" {
  * Doing this makes the plans more resiliant, where it won't always
  * appear that the function needs to be updated
  */
-resource "aws_s3_bucket_object" "artifact" {
+resource "aws_s3_bucket_object" "artifact_packed" {
+  count  = var.lambda_zip_archive == "" ? 1 : 0
   bucket = var.s3_artifact_bucket
   key    = "${var.name}.zip"
-  source = data.archive_file.zip_file_for_lambda.output_path
-  etag   = data.archive_file.zip_file_for_lambda.output_md5
+  source = data.archive_file.zip_file_for_lambda[0].output_path
+  etag   = data.archive_file.zip_file_for_lambda[0].output_md5
+  tags   = var.tags
+  depends_on = [
+    data.archive_file.zip_file_for_lambda
+  ]
+}
+
+resource "aws_s3_bucket_object" "artifact_archive" {
+  count  = var.lambda_zip_archive == "" ? 0 : 1
+  bucket = var.s3_artifact_bucket
+  key    = "${var.name}.zip"
+  source = var.lambda_zip_archive
+  etag   = filemd5(var.lambda_zip_archive)
   tags   = var.tags
   depends_on = [
     data.archive_file.zip_file_for_lambda
@@ -60,8 +74,8 @@ resource "aws_lambda_function" "lambda" {
 
   # Find the file from S3
   s3_bucket         = var.s3_artifact_bucket
-  s3_key            = aws_s3_bucket_object.artifact.id
-  s3_object_version = aws_s3_bucket_object.artifact.version_id
+  s3_key            = var.lambda_zip_archive == "" ? aws_s3_bucket_object.artifact_packed[0].id : aws_s3_bucket_object.artifact_archive[0].id
+  s3_object_version = var.lambda_zip_archive == "" ? aws_s3_bucket_object.artifact_packed[0].version_id : s3_bucket_object.artifact_archive[0].version_id
 
   publish = true
   handler = var.handler
