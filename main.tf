@@ -75,7 +75,7 @@ resource "aws_lambda_function" "lambda" {
   # Find the file from S3
   s3_bucket         = var.s3_artifact_bucket
   s3_key            = var.lambda_zip_archive == "" ? aws_s3_bucket_object.artifact_packed[0].id : aws_s3_bucket_object.artifact_archive[0].id
-  s3_object_version = var.lambda_zip_archive == "" ? aws_s3_bucket_object.artifact_packed[0].version_id : s3_bucket_object.artifact_archive[0].version_id
+  s3_object_version = var.lambda_zip_archive == "" ? aws_s3_bucket_object.artifact_packed[0].version_id : aws_s3_bucket_object.artifact_archive[0].version_id
 
   publish = true
   handler = var.handler
