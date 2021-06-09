@@ -17,6 +17,7 @@ variable "tags" {
 }
 
 variable "lambda_code_source_dir" {
+  default     = ""
   description = "An absolute path to the directory containing the code to upload to lambda"
 }
 
